@@ -1,0 +1,16 @@
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_LCD12864_SHOWCHAR?LCD12864
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_LCD12864_SHOWSIGNEDNUM?LCD12864
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_LCD12864_SHOWBINNUM?LCD12864
+
+Program Size: data=35.0 xdata=0 code=1286
+creating hex file from ".\Objects\project1"...
+".\Objects\project1" - 0 Error(s), 3 Warning(s).
+Build Time Elapsed:  00:00:00
