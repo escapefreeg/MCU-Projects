@@ -1,3 +1,4 @@
+//采用集成版板子开发
 #include <REGX52.H>
 #include "LCD12864.h"
 #include "MatrixKey.h"
@@ -8,6 +9,7 @@ sbit Motor_A = P2^2;
 sbit Motor_B = P1^5;
 sbit Motor_C = P1^6;
 sbit Motor_D = P1^7;
+sbit = P1^2;
 
 unsigned char CurLevel = 1,DisLevel = 7;
 unsigned char KeyMatrix = 0;
@@ -20,6 +22,7 @@ unsigned char mfi = 0,mri = 0;
 unsigned char WaitFlag = 0;
 unsigned int WaitCount = 0;
 unsigned char LastLiftMode = 1;
+unsigned char DoorOpen = 0;//默认门是关上的
 void INTR1_Init(){
     //use time
     IT1 = 1;
