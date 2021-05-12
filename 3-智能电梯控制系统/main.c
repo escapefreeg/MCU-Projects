@@ -9,7 +9,9 @@ sbit Motor_A = P2^2;
 sbit Motor_B = P1^5;
 sbit Motor_C = P1^6;
 sbit Motor_D = P1^7;
-sbit = P1^2;
+
+sbit DoorCtrl = P1^2;
+//选一个引脚作为开门关门的指示灯即可
 
 unsigned char CurLevel = 1,DisLevel = 7;
 unsigned char KeyMatrix = 0;
@@ -22,7 +24,7 @@ unsigned char mfi = 0,mri = 0;
 unsigned char WaitFlag = 0;
 unsigned int WaitCount = 0;
 unsigned char LastLiftMode = 1;
-unsigned char DoorOpen = 0;//默认门是关上的
+
 void INTR1_Init(){
     //use time
     IT1 = 1;
@@ -99,7 +101,8 @@ void main(void){
     Timer1_Init();
     INTR1_Init();
     Motor_DataInit();
-
+    //控制门相关，默认门是关闭的
+    DoorCtrl = 0;
     //display info
     LCD12864_ShowString(1,3,"ZNDTKZQ");
     LCD12864_ShowString(2,1,"lihongke");
@@ -132,18 +135,21 @@ void main(void){
             if(!WaitFlag) WaitCount = 0;
             WaitFlag = 1;
             MotorStop();
+            DoorCtrl = 1;
         }
         else if(CurLevel<DisLevel){
             //上升模式
             LastLiftMode = LiftMode;LiftMode = 1;
             //步进电机正转
             MotorForward();
+            DoorCtrl = 0;
         }
         else{
             //下降模式
             LastLiftMode = LiftMode;LiftMode = 0;
             //步进电机反转
             MotorReverse();
+            DoorCtrl = 0;
         }
         Motor_Speed = LastLiftMode ^ LiftMode;
         if(Motor_Speed != 0){P2_3 = 0;Delayxms(100);P2_3 = 1;}
@@ -151,6 +157,7 @@ void main(void){
     }
 }
 
+//外部中断1 p33
 void INTR1_Routine() interrupt 2
 { 	
     INTR1_Count++;
@@ -167,6 +174,7 @@ void INTR1_Routine() interrupt 2
     }
 }
 
+//定时器中断1
 void Timer1_Routine() interrupt 3
 {
 	static unsigned int T1Count = 0;
