@@ -14,7 +14,7 @@ unsigned char OneWire_Init(void)
 	
 	unsigned char i,j;
 	unsigned char AckBit;
-	//ET0 = 0;
+	ET0 = 0;
 	OneWire_DQ=1;
 	OneWire_DQ=0;
 	i = 6;j = 93;//Delay 500us
@@ -26,7 +26,7 @@ unsigned char OneWire_Init(void)
 	_nop_();_nop_();_nop_();//Delay 500us
 	i = 6;j = 81;
 	do{while (--j);} while (--i);
-	//ET0 = 1;
+	ET0 = 1;
 	return AckBit;
 }
 
@@ -38,7 +38,7 @@ unsigned char OneWire_Init(void)
 void OneWire_SendBit(unsigned char Bit)
 {
 	unsigned char i,j;
-	//ET0 = 0;
+	ET0 = 0;
 	OneWire_DQ=0;
 	_nop_();_nop_();_nop_();//Delay 10us
 	i = 35;while (--i);
@@ -47,7 +47,7 @@ void OneWire_SendBit(unsigned char Bit)
 	i = 1;j = 133;
 	do{while (--j);} while (--i);			
 	OneWire_DQ=1;
-	//ET0 = 1;
+	ET0 = 1;
 }
 
 /**
@@ -59,7 +59,7 @@ unsigned char OneWire_ReceiveBit(void)
 {
 	unsigned char i,j;
 	unsigned char Bit;
-	//ET0 = 0;
+	ET0 = 0;
 	OneWire_DQ=0;
 	i = 22;while (--i);//Delay 5us
 	OneWire_DQ=1;
@@ -68,7 +68,7 @@ unsigned char OneWire_ReceiveBit(void)
 	_nop_();_nop_();_nop_();//Delay 50us
 	i = 1;j = 133;
 	do{while (--j);} while (--i);
-	//ET0 = 1;	
+	ET0 = 1;	
 	return Bit;
 }
 
@@ -80,12 +80,12 @@ unsigned char OneWire_ReceiveBit(void)
 void OneWire_SendByte(unsigned char Byte)
 {
 	unsigned char i;
-	//ET0 = 0;
+	ET0 = 0;
 	for(i=0;i<8;i++)
 	{
 		OneWire_SendBit(Byte&(0x01<<i));
 	}
-	//ET0 = 1;
+	ET0 = 1;
 }
 
 /**
@@ -97,12 +97,12 @@ unsigned char OneWire_ReceiveByte(void)
 {
 	unsigned char i;
 	unsigned char Byte=0x00;
-	//ET0 = 0;
+	ET0 = 0;
 	for(i=0;i<8;i++)
 	{
 		if(OneWire_ReceiveBit()){Byte|=(0x01<<i);}
 	}
-	//ET0 = 1;
+	ET0 = 1;
 	return Byte;
 }
 

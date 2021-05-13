@@ -26,6 +26,17 @@ void LCD12864_Delay(unsigned char xms)
 	}	
 }
 
+void Delay15us()		//@11.0592MHz
+{
+	unsigned char i;
+
+	_nop_();
+	_nop_();
+	i = 38;
+	while (--i);
+}
+
+
 /**
   * @brief  LCD12864写命令
   * @param  Command 要写入的命令
@@ -59,9 +70,31 @@ void LCD12864_WriteData(unsigned char Data)
 }
 
 /**
+  * @brief  LCD12864读数据
+  * @param  Data 要写出的数据
+  * @retval 无
+  */
+unsigned char LCD12864_ReadData()
+{
+	unsigned char Data = 0;
+	LCD12864_DataPort = 0xff;
+	LCD12864_RS=1;
+	LCD12864_RW=1;
+	LCD12864_EN=1;
+	Delay15us();
+	Data = LCD12864_DataPort;
+	
+	LCD12864_EN=0;
+	LCD12864_Delay(1);
+
+	return Data;
+}
+
+
+/**
   * @brief  LCD12864设置光标位置
   * @param  Line 行位置，范围：1~4
-  * @param  Column 列位置，范围：1~16
+  * @param  Column 列位置，范围：1~8
   * @retval 无
   */
 void LCD12864_SetCursor(unsigned char Line,unsigned char Column)
@@ -93,13 +126,14 @@ void LCD12864_Init()
 {         
 	LCD12864_WriteCommand(0x30);   //基本指令集          
 	LCD12864_WriteCommand(0x02);   //地址归位          
-	LCD12864_Delay(6);
+	LCD12864_Delay(5);
 	LCD12864_WriteCommand(0x0c);   //整体显示打开,游标关闭          
 	LCD12864_WriteCommand(0x06);   //游标右移          
 	LCD12864_WriteCommand(0x80);   //设定显示的起始地址          
 	LCD12864_WriteCommand(0x01);   //清除显示 
-	LCD12864_Delay(6);
+	LCD12864_Delay(5);
 }
+
 
 /**
   * @brief  在LCD12864指定位置上显示一个字符
@@ -110,9 +144,26 @@ void LCD12864_Init()
   */
 void LCD12864_ShowChar(unsigned char Line,unsigned char Column,char Char)
 {
-	LCD12864_SetCursor(Line,Column);
-	LCD12864_WriteData(Char);
+	unsigned char HighData = 0;
+	//不好处理的地址
+	if(Column % 2 == 0){
+		LCD12864_SetCursor(Line,Column/2);
+		//first->high
+		//second->high
+		//third->low
+		HighData = LCD12864_ReadData();
+		//begin write
+		LCD12864_SetCursor(Line,Column/2);
+		LCD12864_WriteData(HighData);
+		LCD12864_WriteData(Char);
+	}
+	//1 3 5 7 9 11 13 15
+	else{
+		LCD12864_SetCursor(Line,Column/2 + 1);
+		LCD12864_WriteData(Char);
+	}
 }
+
 
 /**
   * @brief  在LCD12864指定位置开始显示所给字符串
@@ -124,11 +175,28 @@ void LCD12864_ShowChar(unsigned char Line,unsigned char Column,char Char)
 void LCD12864_ShowString(unsigned char Line,unsigned char Column,char *String)
 {
 	unsigned char i;
-	LCD12864_SetCursor(Line,Column);
-	for(i=0;String[i]!='\0';i++)
-	{
-		LCD12864_WriteData(String[i]);
+	unsigned char HighData = 0;
+	//不好处理的地址
+	if(Column % 2 == 0){
+		LCD12864_SetCursor(Line,Column/2);
+		HighData = LCD12864_ReadData();
+		LCD12864_SetCursor(Line,Column/2);
+		LCD12864_WriteData(HighData);
+		for(i=0;String[i]!='\0';i++)
+		{
+			LCD12864_WriteData(String[i]);
+		}
 	}
+	//1 3 5 7 9 11 13 15
+	else{
+		LCD12864_SetCursor(Line,Column/2 + 1);
+		for(i=0;String[i]!='\0';i++)
+		{
+			LCD12864_WriteData(String[i]);
+		}
+	}
+	
+	
 }
 
 /**
@@ -156,12 +224,28 @@ int LCD12864_Pow(int X,int Y)
 void LCD12864_ShowNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length)
 {
 	unsigned char i;
-	LCD12864_SetCursor(Line,Column);
-	for(i=Length;i>0;i--)
-	{
-		LCD12864_WriteData(Number/LCD12864_Pow(10,i-1)%10+'0');
+	unsigned char HighData = 0;
+	//不好处理的地址
+	if(Column % 2 == 0){
+		LCD12864_SetCursor(Line,Column/2);
+		HighData = LCD12864_ReadData();
+		LCD12864_SetCursor(Line,Column/2);
+		LCD12864_WriteData(HighData);
+		for(i=Length;i>0;i--)
+		{
+			LCD12864_WriteData(Number/LCD12864_Pow(10,i-1)%10+'0');
+		}
+	}
+	else{
+		LCD12864_SetCursor(Line,Column/2 + 1);
+		for(i=Length;i>0;i--)
+		{
+			LCD12864_WriteData(Number/LCD12864_Pow(10,i-1)%10+'0');
+		}
 	}
 }
+
+
 
 /**
   * @brief  在LCD12864指定位置开始以有符号十进制显示所给数字
@@ -175,21 +259,49 @@ void LCD12864_ShowSignedNum(unsigned char Line,unsigned char Column,int Number,u
 {
 	unsigned char i;
 	unsigned int Number1;
-	LCD12864_SetCursor(Line,Column);
-	if(Number>=0)
-	{
-		LCD12864_WriteData('+');
-		Number1=Number;
+	unsigned char HighData = 0;
+
+	//不好处理的地址
+	if(Column % 2 == 0){
+		LCD12864_SetCursor(Line,Column/2);
+		HighData = LCD12864_ReadData();
+		LCD12864_SetCursor(Line,Column/2);
+		LCD12864_WriteData(HighData);
+		if(Number>=0)
+		{
+			LCD12864_WriteData('+');
+			Number1=Number;
+		}
+		else
+		{
+			LCD12864_WriteData('-');
+			Number1=-Number;
+		}
+		for(i=Length;i>0;i--)
+		{
+			LCD12864_WriteData(Number1/LCD12864_Pow(10,i-1)%10+'0');
+		}
 	}
-	else
-	{
-		LCD12864_WriteData('-');
-		Number1=-Number;
+	else{
+		LCD12864_SetCursor(Line,Column/2 + 1);
+		if(Number>=0)
+		{
+			LCD12864_WriteData('+');
+			Number1=Number;
+		}
+		else
+		{
+			LCD12864_WriteData('-');
+			Number1=-Number;
+		}
+		for(i=Length;i>0;i--)
+		{
+			LCD12864_WriteData(Number1/LCD12864_Pow(10,i-1)%10+'0');
+		}
 	}
-	for(i=Length;i>0;i--)
-	{
-		LCD12864_WriteData(Number1/LCD12864_Pow(10,i-1)%10+'0');
-	}
+
+	
+	
 }
 
 /**
@@ -203,19 +315,42 @@ void LCD12864_ShowSignedNum(unsigned char Line,unsigned char Column,int Number,u
 void LCD12864_ShowHexNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length)
 {
 	unsigned char i,SingleNumber;
-	LCD12864_SetCursor(Line,Column);
-	for(i=Length;i>0;i--)
-	{
-		SingleNumber=Number/LCD12864_Pow(16,i-1)%16;
-		if(SingleNumber<10)
+	unsigned char HighData = 0;
+	//不好处理的地址
+	if(Column % 2 == 0){
+		LCD12864_SetCursor(Line,Column/2);
+		HighData = LCD12864_ReadData();
+		LCD12864_SetCursor(Line,Column/2);
+		LCD12864_WriteData(HighData);
+		for(i=Length;i>0;i--)
 		{
-			LCD12864_WriteData(SingleNumber+'0');
-		}
-		else
-		{
-			LCD12864_WriteData(SingleNumber-10+'A');
+			SingleNumber=Number/LCD12864_Pow(16,i-1)%16;
+			if(SingleNumber<10)
+			{
+				LCD12864_WriteData(SingleNumber+'0');
+			}
+			else
+			{
+				LCD12864_WriteData(SingleNumber-10+'A');
+			}
 		}
 	}
+	else{
+		LCD12864_SetCursor(Line,Column/2 + 1);
+		for(i=Length;i>0;i--)
+		{
+			SingleNumber=Number/LCD12864_Pow(16,i-1)%16;
+			if(SingleNumber<10)
+			{
+				LCD12864_WriteData(SingleNumber+'0');
+			}
+			else
+			{
+				LCD12864_WriteData(SingleNumber-10+'A');
+			}
+		}
+	}
+	
 }
 
 /**
@@ -229,9 +364,25 @@ void LCD12864_ShowHexNum(unsigned char Line,unsigned char Column,unsigned int Nu
 void LCD12864_ShowBinNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length)
 {
 	unsigned char i;
-	LCD12864_SetCursor(Line,Column);
-	for(i=Length;i>0;i--)
-	{
-		LCD12864_WriteData(Number/LCD12864_Pow(2,i-1)%2+'0');
+	unsigned char HighData = 0;
+	//不好处理的地址
+	if(Column % 2 == 0){
+		LCD12864_SetCursor(Line,Column/2);
+		HighData = LCD12864_ReadData();
+		LCD12864_SetCursor(Line,Column/2);
+		LCD12864_WriteData(HighData);
+		for(i=Length;i>0;i--)
+		{
+			LCD12864_WriteData(Number/LCD12864_Pow(2,i-1)%2+'0');
+		}
 	}
+	else{
+		LCD12864_SetCursor(Line,Column/2 + 1);
+		for(i=Length;i>0;i--)
+		{
+			LCD12864_WriteData(Number/LCD12864_Pow(2,i-1)%2+'0');
+		}
+	}
+	
 }
+
