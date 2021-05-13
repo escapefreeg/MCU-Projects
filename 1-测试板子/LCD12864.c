@@ -1,9 +1,9 @@
 #include <REGX52.H>
 #include <INTRINS.H>
 //引脚配置：
-sbit LCD12864_RS=P1^0;
-sbit LCD12864_RW=P1^1;
-sbit LCD12864_EN=P1^2;
+sbit LCD12864_RS=P3^5;
+sbit LCD12864_RW=P3^6;
+sbit LCD12864_EN=P3^4;
 #define LCD12864_DataPort P0
 
 //函数定义：

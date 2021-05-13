@@ -9,9 +9,11 @@ void main(void){
     Timer0_Init();
     LCD12864_Init();
     //
+    LCD12864_ShowNum(2,1,15,3);
     while(1){
-        //key = MatrixKey();
-        LCD12864_ShowNum(1,1,key,2);
+        key = MatrixKey();
+        if(key != 0)
+            LCD12864_ShowNum(1,1,key,3);
     }
 }
 

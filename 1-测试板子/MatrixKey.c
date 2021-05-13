@@ -23,33 +23,33 @@ unsigned char MatrixKey_Scan()
 {
 	unsigned char KeyNumber=0;
 	
-	P3=0xFF;
-	P3_0=0;
-	     if(P3_7==0){KeyNumber=4;}
-	else if(P3_6==0){KeyNumber=3;}
-	else if(P3_5==0){KeyNumber=2;}
-	else if(P3_4==0){KeyNumber=1;}
+	P1=0xFF;
+	P1_0=0;
+	     if(P1_7==0){KeyNumber=4;}
+	else if(P1_6==0){KeyNumber=3;}
+	else if(P1_5==0){KeyNumber=2;}
+	else if(P1_4==0){KeyNumber=1;}
 	
-	P3=0xFF;
-	P3_1=0;
-	     if(P3_7==0){KeyNumber=8;}
-	else if(P3_6==0){KeyNumber=7;}
-	else if(P3_5==0){KeyNumber=6;}
-	else if(P3_4==0){KeyNumber=5;}
+	P1=0xFF;
+	P1_1=0;
+	     if(P1_7==0){KeyNumber=8;}
+	else if(P1_6==0){KeyNumber=7;}
+	else if(P1_5==0){KeyNumber=6;}
+	else if(P1_4==0){KeyNumber=5;}
 	
-	P3=0xFF;
-	P3_2=0;
-	     if(P3_7==0){KeyNumber=12;}
-	else if(P3_6==0){KeyNumber=11;}
-	else if(P3_5==0){KeyNumber=10;}
-	else if(P3_4==0){KeyNumber=9;}
+	P1=0xFF;
+	P1_2=0;
+	     if(P1_7==0){KeyNumber=12;}
+	else if(P1_6==0){KeyNumber=11;}
+	else if(P1_5==0){KeyNumber=10;}
+	else if(P1_4==0){KeyNumber=9;}
 	
-	P3=0xFF;
-	P3_3=0;
-	     if(P3_7==0){KeyNumber=16;}
-	else if(P3_6==0){KeyNumber=15;}
-	else if(P3_5==0){KeyNumber=14;}
-	else if(P3_4==0){KeyNumber=13;}
+	P1=0xFF;
+	P1_3=0;
+	     if(P1_7==0){KeyNumber=16;}
+	else if(P1_6==0){KeyNumber=15;}
+	else if(P1_5==0){KeyNumber=14;}
+	else if(P1_4==0){KeyNumber=13;}
 	
 	return KeyNumber;
 }
