@@ -36,6 +36,22 @@ void Delay15us()		//@11.0592MHz
 	while (--i);
 }
 
+/**
+  * @brief  LCD12864读是否繁忙
+  * @param  Data 要写出的数
+  * @retval 如果忙返回0x80，否则返回0
+  */
+unsigned char LCD12864_ReadBusy()
+{ 
+	unsigned char Data;
+	LCD12864_DataPort = 0x00;
+	LCD12864_RS=0;
+	LCD12864_RW=1;
+	LCD12864_EN=1;
+	Data = LCD12864_DataPort & 0x80;
+	LCD12864_EN=0;
+	return Data; 
+}
 
 /**
   * @brief  LCD12864写命令
@@ -44,6 +60,7 @@ void Delay15us()		//@11.0592MHz
   */
 void LCD12864_WriteCommand(unsigned char Command)
 {
+	while(LCD12864_ReadBusy());
 	LCD12864_RS=0;
 	LCD12864_RW=0;
 	LCD12864_DataPort=Command;
@@ -60,6 +77,7 @@ void LCD12864_WriteCommand(unsigned char Command)
   */
 void LCD12864_WriteData(unsigned char Data)
 {
+	while(LCD12864_ReadBusy());
 	LCD12864_RS=1;
 	LCD12864_RW=0;
 	LCD12864_DataPort=Data;
@@ -77,13 +95,13 @@ void LCD12864_WriteData(unsigned char Data)
 unsigned char LCD12864_ReadData()
 {
 	unsigned char Data = 0;
-	LCD12864_DataPort = 0xff;
+	while(LCD12864_ReadBusy());
+	//LCD12864_DataPort = 0x00;
 	LCD12864_RS=1;
 	LCD12864_RW=1;
 	LCD12864_EN=1;
 	Delay15us();
 	Data = LCD12864_DataPort;
-	
 	LCD12864_EN=0;
 	LCD12864_Delay(1);
 
@@ -176,10 +194,19 @@ void LCD12864_ShowString(unsigned char Line,unsigned char Column,char *String)
 {
 	unsigned char i;
 	unsigned char HighData = 0;
+
+	unsigned char High2 = 0,High3 = 0;
 	//不好处理的地址
 	if(Column % 2 == 0){
 		LCD12864_SetCursor(Line,Column/2);
 		HighData = LCD12864_ReadData();
+		High2 = LCD12864_ReadData();
+		High3 = LCD12864_ReadData();
+
+		LCD12864_ShowChar(4,1,HighData);
+		LCD12864_ShowChar(4,3,0x33);
+		LCD12864_ShowChar(4,5,High3);
+
 		LCD12864_SetCursor(Line,Column/2);
 		LCD12864_WriteData(HighData);
 		for(i=0;String[i]!='\0';i++)
