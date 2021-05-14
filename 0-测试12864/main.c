@@ -25,7 +25,6 @@ void main(void){
     while(1){
         LCD12864_ShowString(1,1,"zbcd:089.6");
 
-        P0 = 0xff;
         High1 = LCD12864_ReadData();
         High2 = LCD12864_ReadData();
         High3 = LCD12864_ReadData();

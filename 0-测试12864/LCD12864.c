@@ -93,13 +93,13 @@ void LCD12864_WriteData(unsigned char Data)
 
 /**
   * @brief  LCD12864读数据
-  * @param  Data 要写出的数据
-  * @retval 无
+  * @param  无
+  * @retval Data 要写出的数据
   */
 unsigned char LCD12864_ReadData()
 {
 	unsigned char Data = 0;
-	
+	LCD12864_DataPort = 0xFF;
 	LCD12864_RS=1;
 	LCD12864_RW=1;
 	LCD12864_EN=1;
