@@ -4,6 +4,10 @@
 sbit LCD12864_RS=P3^5;
 sbit LCD12864_RW=P3^6;
 sbit LCD12864_EN=P3^4;
+
+// sbit LCD12864_RS=P1^0;
+// sbit LCD12864_RW=P1^1;
+// sbit LCD12864_EN=P2^5;
 #define LCD12864_DataPort P0
 
 //函数定义：
@@ -95,8 +99,7 @@ void LCD12864_WriteData(unsigned char Data)
 unsigned char LCD12864_ReadData()
 {
 	unsigned char Data = 0;
-	while(LCD12864_ReadBusy());
-	//LCD12864_DataPort = 0x00;
+	
 	LCD12864_RS=1;
 	LCD12864_RW=1;
 	LCD12864_EN=1;
@@ -104,7 +107,6 @@ unsigned char LCD12864_ReadData()
 	Data = LCD12864_DataPort;
 	LCD12864_EN=0;
 	LCD12864_Delay(1);
-
 	return Data;
 }
 
@@ -194,19 +196,10 @@ void LCD12864_ShowString(unsigned char Line,unsigned char Column,char *String)
 {
 	unsigned char i;
 	unsigned char HighData = 0;
-
-	unsigned char High2 = 0,High3 = 0;
 	//不好处理的地址
 	if(Column % 2 == 0){
 		LCD12864_SetCursor(Line,Column/2);
 		HighData = LCD12864_ReadData();
-		High2 = LCD12864_ReadData();
-		High3 = LCD12864_ReadData();
-
-		LCD12864_ShowChar(4,1,HighData);
-		LCD12864_ShowChar(4,3,0x33);
-		LCD12864_ShowChar(4,5,High3);
-
 		LCD12864_SetCursor(Line,Column/2);
 		LCD12864_WriteData(HighData);
 		for(i=0;String[i]!='\0';i++)
