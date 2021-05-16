@@ -4,11 +4,7 @@
 sbit LCD12864_RS=P3^5;
 sbit LCD12864_RW=P3^6;
 sbit LCD12864_EN=P3^4;
-
-// sbit LCD12864_RS=P1^0;
-// sbit LCD12864_RW=P1^1;
-// sbit LCD12864_EN=P2^5;
-#define LCD12864_DataPort P0
+#define LCD12864_DataPort P1
 
 //函数定义：
 /**
@@ -40,22 +36,6 @@ void Delay15us()		//@11.0592MHz
 	while (--i);
 }
 
-/**
-  * @brief  LCD12864读是否繁忙
-  * @param  Data 要写出的数
-  * @retval 如果忙返回0x80，否则返回0
-  */
-unsigned char LCD12864_ReadBusy()
-{ 
-	unsigned char Data;
-	LCD12864_DataPort = 0x00;
-	LCD12864_RS=0;
-	LCD12864_RW=1;
-	LCD12864_EN=1;
-	Data = LCD12864_DataPort & 0x80;
-	LCD12864_EN=0;
-	return Data; 
-}
 
 /**
   * @brief  LCD12864写命令
@@ -64,7 +44,6 @@ unsigned char LCD12864_ReadBusy()
   */
 void LCD12864_WriteCommand(unsigned char Command)
 {
-	while(LCD12864_ReadBusy());
 	LCD12864_RS=0;
 	LCD12864_RW=0;
 	LCD12864_DataPort=Command;
@@ -81,7 +60,6 @@ void LCD12864_WriteCommand(unsigned char Command)
   */
 void LCD12864_WriteData(unsigned char Data)
 {
-	while(LCD12864_ReadBusy());
 	LCD12864_RS=1;
 	LCD12864_RW=0;
 	LCD12864_DataPort=Data;
@@ -93,20 +71,23 @@ void LCD12864_WriteData(unsigned char Data)
 
 /**
   * @brief  LCD12864读数据
-  * @param  无
-  * @retval Data 要写出的数据
+  * @param  Data 要写出的数据
+  * @retval 无
   */
 unsigned char LCD12864_ReadData()
 {
 	unsigned char Data = 0;
-	LCD12864_DataPort = 0xFF;
+	LCD12864_DataPort = 0xff;
 	LCD12864_RS=1;
 	LCD12864_RW=1;
 	LCD12864_EN=1;
 	Delay15us();
+	// Delay15us();_nop_();
 	Data = LCD12864_DataPort;
+	
 	LCD12864_EN=0;
 	LCD12864_Delay(1);
+
 	return Data;
 }
 

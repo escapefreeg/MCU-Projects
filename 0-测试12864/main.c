@@ -1,10 +1,7 @@
 #include <REGX52.H>
 #include "LCD12864.h"
-#include <stdio.h>
 //时序问题
-sbit LCD_PSB =  P3^7;           
-sbit LCD_reset =  P2^6; 
-sbit LCD_reset1 =  P2^7; 
+
 
 sfr P0M1 = 0x93;
 sfr P0M0 = 0x94;
@@ -23,8 +20,9 @@ void main(void){
     
     //
     while(1){
-        LCD12864_ShowString(1,1,"zbcd:089.6");
+        LCD12864_ShowString(1,1,"Ybcd:089.6");
 
+        LCD12864_SetCursor(1,1);
         High1 = LCD12864_ReadData();
         High2 = LCD12864_ReadData();
         High3 = LCD12864_ReadData();
