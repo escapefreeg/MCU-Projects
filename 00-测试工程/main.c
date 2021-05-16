@@ -1,36 +1,47 @@
-//项目中采用java命名法
 #include <REGX52.H>
-//要引入P4对应的地址！！！
-sfr P4 = 0xC0;
-sbit resetPin = P4^7;
+#include "LCD12864.h"
+#include "Delay.h"
+#include "AT24C02.h"
 
-unsigned char key = 0;
+unsigned char byte1 = 1;
+unsigned char byte2 = 2;
+unsigned char byte3 = 3;
+unsigned char byte4 = 4;
 
-void Delay1000ms()		//@11.0592MHz
-{
-	unsigned char i, j, k;
-
-	i = 43;
-	j = 6;
-	k = 203;
-	do
-	{
-		do
-		{
-			while (--k);
-		} while (--j);
-	} while (--i);
-}
-
-
-void testReset(){
-    resetPin = !resetPin;
-    Delay1000ms();
-}
 void main(void){
-    resetPin = 1;
-	
+    
+	//init
+    LCD12864_Init();
+    // //读取原来数据 并显示
+    // LCD12864_ShowBinNum(1,1,AT24C02_ReadByte(0),8);
+    // LCD12864_ShowBinNum(2,1,AT24C02_ReadByte(1),8);
+    // LCD12864_ShowBinNum(3,1,AT24C02_ReadByte(2),8);
+    // LCD12864_ShowBinNum(4,1,AT24C02_ReadByte(3),8);
+    // Delayxms(1000);
+    // //写入新的数据
+    // AT24C02_WriteByte(0,byte1);
+    // Delayxms(5);
+    // AT24C02_WriteByte(1,byte2);
+    // Delayxms(5);
+    // AT24C02_WriteByte(2,byte3);
+    // Delayxms(5);
+    // AT24C02_WriteByte(3,byte4);
+    // Delayxms(5);
+    // //清屏 加 转场
+    // LCD12864_Init();
+    // Delayxms(1000);
+    // //显示新的数据
+    // LCD12864_ShowBinNum(1,1,AT24C02_ReadByte(0),8);
+    // LCD12864_ShowBinNum(2,1,AT24C02_ReadByte(1),8);
+    // LCD12864_ShowBinNum(3,1,AT24C02_ReadByte(2),8);
+    // LCD12864_ShowBinNum(4,1,AT24C02_ReadByte(3),8);
+	LCD12864_ShowNum(1,2,34,2);
+	LCD12864_ShowString(2,2,"hello world!");
+	LCD12864_ShowSignedNum(3,4,-55,3);
+	LCD12864_ShowChar(4,16,'c');
     while(1){
-        testReset();
+        ;
     }
 }
+
+
