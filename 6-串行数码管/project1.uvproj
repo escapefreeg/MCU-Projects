@@ -411,6 +411,26 @@
               <FileType>5</FileType>
               <FilePath>.\Timer.h</FilePath>
             </File>
+            <File>
+              <FileName>TM1637.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\TM1637.c</FilePath>
+            </File>
+            <File>
+              <FileName>TM1637.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\TM1637.h</FilePath>
+            </File>
+            <File>
+              <FileName>I2C.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\I2C.c</FilePath>
+            </File>
+            <File>
+              <FileName>I2C.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\I2C.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
