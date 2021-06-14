@@ -9,4 +9,5 @@ void LCD12864_ShowNum(unsigned char Line,unsigned char Column,unsigned int Numbe
 void LCD12864_ShowSignedNum(unsigned char Line,unsigned char Column,int Number,unsigned char Length);
 void LCD12864_ShowHexNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length);
 void LCD12864_ShowBinNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length);
+void LCD12864_ShowFanNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length)
 #endif

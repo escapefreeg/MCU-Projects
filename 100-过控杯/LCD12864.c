@@ -245,7 +245,38 @@ void LCD12864_ShowNum(unsigned char Line,unsigned char Column,unsigned int Numbe
 	}
 }
 
-
+void LCD12864_ShowFanNum(unsigned char Line,unsigned char Column,unsigned int Number,unsigned char Length)
+{
+	unsigned char i;
+	unsigned char HighData = 0;
+	unsigned char tem;
+	//不好处理的地址
+	if(Column % 2 == 0){
+		LCD12864_SetCursor(Line,Column/2);
+		HighData = LCD12864_ReadData();
+		LCD12864_SetCursor(Line,Column/2);
+		LCD12864_WriteData(HighData);
+		for(i=Length;i>0;i--)
+		{
+			tem = Number/LCD12864_Pow(10,i-1)%10;
+			if(tem == 0)
+				LCD12864_WriteData(32);
+			else
+				LCD12864_WriteData(tem+'0');
+		}
+	}
+	else{
+		LCD12864_SetCursor(Line,Column/2 + 1);
+		for(i=Length;i>0;i--)
+		{
+			tem = Number/LCD12864_Pow(10,i-1)%10;
+			if(tem == 0)
+				LCD12864_WriteData(32);
+			else
+				LCD12864_WriteData(tem+'0');
+		}
+	}
+}
 
 /**
   * @brief  在LCD12864指定位置开始以有符号十进制显示所给数字
