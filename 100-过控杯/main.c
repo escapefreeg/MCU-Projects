@@ -5,13 +5,17 @@
 #include "Timer.h"
 #include "AT24C02.h"
 #include "DS18B20.h"
+#include "Delay.h"
 
-sbit fan = P1^0;
+sbit fan = P2^0;
+unsigned char sFlag = 1;
 unsigned char speed = 50;
 unsigned char key;
 unsigned char min = 20,mid=24,max=28;
+unsigned char minc,midc,maxc,speedc;
 unsigned char procCon=0;
 unsigned char lastCon=0;
+float TheT;
 
 
 //第几行第几列开始显示温度
@@ -23,6 +27,168 @@ void ShowT(unsigned char Line,unsigned char Column,float tt){
     LCD12864_ShowChar(Line,Column + 3 ,'.');
     //小数部分
     LCD12864_ShowNum(Line,Column + 4 ,((unsigned long)(tt*10000))%10000,4);
+}
+
+void ShowInfo(void)//时间显示功能
+{
+    LCD12864_ShowNum(2,8,speed,3);
+        //显示和不显示
+        if(procCon & 0x01){
+            //显示
+            //上次是显示就刷新数字
+            //上次是不显示就刷新数字和字符
+            LCD12864_ShowNum(3,5,min,3);
+            LCD12864_ShowNum(3,14,mid,3);
+            LCD12864_ShowNum(4,10,max,3);
+            if(!(lastCon & 0x01)){
+                LCD12864_ShowString(3,1,"min:");
+                LCD12864_ShowString(3,10,"mid:");
+                LCD12864_ShowString(4,6,"max:");
+            }
+        }
+        else{
+            //不显示
+            //上次是显示就刷新
+            //上次是不显示就什么不做
+            if(lastCon & 0x01){
+                LCD12864_ShowString(3,1,"       ");
+                LCD12864_ShowString(3,10,"       ");
+                LCD12864_ShowString(4,6,"       ");
+            }
+        }
+}
+
+void SetInfo(void)//时间设置功能
+{
+        if(key == 3){
+            //闪烁情况下才可以使用
+                //开显示的情况
+                    //位置加1，注意到上限
+                //关显示的情况
+                    //没有变化
+                //如果是开显示情况
+            if (procCon &0x01){
+                //自动模式情况
+                if(!(procCon & 0x04)){
+                    procCon += 0x10;
+                    if ((procCon & 0xF0) == 0x40) {procCon &= 0x0F;procCon |= 0x10;}
+                }
+                //手动模式情况
+                else{
+                    procCon = (procCon + 0x10) % 0x40;
+                }
+            }
+            //如果是关显示情况
+            else{
+                ;
+            }
+        }
+        else if(key == 4){
+            if (procCon &0x01){
+                //自动模式情况
+                if(!(procCon & 0x04)){
+                    procCon -= 0x10;
+                    if ((procCon & 0xF0) == 0x00) {procCon &= 0x0F;procCon |= 0x30;}
+                }
+                //手动模式情况
+                else{
+                    procCon = (procCon + 0x40 - 0x10 ) % 0x40;
+                }
+            }
+            //如果是关显示情况
+            else{
+                ;
+            }
+        }
+        //+1
+        else if(key == 5){
+            //闪烁的情况才可以用
+                //选中位置+1
+            switch(procCon & 0xF0){
+                case 0x00: speedc += 1;break;
+                case 0x10: minc += 1;break;
+                case 0x20: midc += 1;break;
+                case 0x30: maxc += 1;break;
+            }
+        }
+        //-1
+        else if(key == 6){
+            //闪烁的情况才可以用
+                //选中位置-1
+            switch(procCon & 0xF0){
+                case 0x00: speedc -= 1;break;
+                case 0x10: minc -= 1;break;
+                case 0x20: midc -= 1;break;
+                case 0x30: maxc -= 1;break;
+            }
+        }
+        //+5
+        else if(key == 7){
+            //闪烁的情况才可以用
+                //选中位置+5
+            switch(procCon & 0xF0){
+                case 0x00: speedc += 5;break;
+                case 0x10: minc += 5;break;
+                case 0x20: midc += 5;break;
+                case 0x30: maxc += 5;break;
+            }
+        }
+        //-5
+        else if(key == 8){
+            //闪烁的情况才可以用
+                //选中位置-5
+            switch(procCon & 0xF0){
+                case 0x00: speedc -= 5;break;
+                case 0x10: minc -= 5;break;
+                case 0x20: midc -= 5;break;
+                case 0x30: maxc -= 5;break;
+            }
+        }
+        //清空
+        else if(key == 9){
+            //闪烁的情况才可以用
+                //选中位置清空
+            switch(procCon & 0xF0){
+                case 0x00: speedc = 0;break;
+                case 0x10: minc = 0;break;
+                case 0x20: midc = 0;break;
+                case 0x30: maxc = 0;break;
+            }
+        }
+        //取最大
+        else if(key == 10){
+            //闪烁的情况才可以用
+                //选中位置清空
+            switch(procCon & 0xF0){
+                case 0x00: speedc = 100;break;
+                case 0x10: minc = 40;break;
+                case 0x20: midc = 40;break;
+                case 0x30: maxc = 40;break;
+            }
+        }
+        //显示和不显示
+        if(procCon & 0x01){
+            //显示
+            LCD12864_ShowNum(2,8,speedc,3);
+            LCD12864_ShowNum(3,5,minc,3);
+            LCD12864_ShowNum(3,14,midc,3);
+            LCD12864_ShowNum(4,10,maxc,3);
+            switch(procCon & 0xF0){
+                case 0x00:
+                    if(sFlag) LCD12864_ShowString(2,8,"   ");break;
+                case 0x10:
+                    if(sFlag) LCD12864_ShowString(3,5,"   ");break;
+                case 0x20: 
+                    if(sFlag) LCD12864_ShowString(3,14,"   ");break;
+                case 0x30:
+                    if(sFlag) LCD12864_ShowString(4,10,"   ");break;
+            }
+        }
+        else{
+            //不显示
+            if(sFlag) LCD12864_ShowString(2,8,"   ");
+            else      LCD12864_ShowNum(2,8,speedc,3);
+        }
 }
 
 void main(void){
@@ -44,29 +210,33 @@ void main(void){
         //显示摄氏度的基础信息
     LCD12864_ShowString(1,2,"Temp:+");
     LCD12864_ShowString(2,2,"Speed:");
+    LCD12864_ShowString(2,12,"auto");
 
     while (1)
     {
         key = MatrixKey();
         //显示开关
         if(key == 1){
+            lastCon = procCon;
             //显示打开状态
             if(procCon & 0x01)//0000 0001
             {
-                //设置标志位和关闪烁
-                //默认选择位回0
-                lastCon = procCon;
-                procCon &= 0x0F;
+                //设置标志位
+                //默认选择位回0和关闪烁
+                procCon &= 0x0D;
             }
             //显示关闭状态
             else{
-                //设置标志位和关闪烁
-                //默认选择位回1
-                procCon &= 0x0F;//高四位清零 
-                lastCon &= 0xF0;//低四位清零
-                procCon |= lastCon;//加载上次的选择位
-                lastCon = 0x00;
+                //设置标志位
+                //默认选择位回1和关闪烁
+                procCon &= 0x0D;
+                procCon |= 0x10;
             }
+            //关闪烁对应的操作
+            min=minc;
+            mid=midc;
+            max=maxc;
+            speed=speedc;
             procCon^=0x01;//反转标志位
         }
         //设置开关
@@ -75,149 +245,55 @@ void main(void){
                 //设置标志位，进入修改模式
             //开闪烁状态，关闭闪烁
                 //设置标志位，推出修改模式
-            procCon += 0x10;//0001 0000
-            if(procCon == 0x40){
-                //0100 0000
-                procCon &= 0x0F;
-            }
-            lastCon = procCon;
-        }
-        //位置+1
-        else if(key == 3){
-            //闪烁情况下才可以使用
-                //开显示的情况
-                    //位置加1，注意到上限
-                //关显示的情况
-                    //没有变化
-            procCon += 0x10;//0001 0000
-            if(procCon == 0x40){
-                //0100 0000
-                procCon &= 0x0F;
-            }
-            lastCon = procCon;
-        }
-        //位置-1
-        else if(key == 4){
-            //闪烁情况下才可以使用
-                //开显示的情况
-                    //位置加1，注意到下限
-                //关显示的情况
-                    //没有变化
-            if(procCon == 0x00){
-                //0100 0000
-                procCon &= 0x0F;
-            }
-            else{
-                procCon -= 0x10;//0001 0000
-            }
-            
-            
-            lastCon = procCon;
-        }
-        //+1
-        else if(key == 5){
-            //闪烁的情况才可以用
-                //选中位置+1
-            switch(procCon & 0xF0){
-                case 0x00: speed += 1;break;
-                case 0x10: min += 1;break;
-                case 0x20: mid += 1;break;
-                case 0x30: max += 1;break;
-            }
-        }
-        //-1
-        else if(key == 6){
-            //闪烁的情况才可以用
-                //选中位置-1
-            switch(procCon & 0xF0){
-                case 0x00: speed -= 1;break;
-                case 0x10: min -= 1;break;
-                case 0x20: mid -= 1;break;
-                case 0x30: max -= 1;break;
-            }
-        }
-        //+5
-        else if(key == 7){
-            //闪烁的情况才可以用
-                //选中位置+5
-            switch(procCon & 0xF0){
-                case 0x00: speed += 5;break;
-                case 0x10: min += 5;break;
-                case 0x20: mid += 5;break;
-                case 0x30: max += 5;break;
-            }
-        }
-        //-5
-        else if(key == 8){
-            //闪烁的情况才可以用
-                //选中位置-5
-            switch(procCon & 0xF0){
-                case 0x00: speed -= 5;break;
-                case 0x10: min -= 5;break;
-                case 0x20: mid -= 5;break;
-                case 0x30: max -= 5;break;
-            }
-        }
-        //清空
-        else if(key == 9){
-            //闪烁的情况才可以用
-                //选中位置清空
-            switch(procCon & 0xF0){
-                case 0x00: speed = 0;break;
-                case 0x10: min = 0;break;
-                case 0x20: mid = 0;break;
-                case 0x30: max = 0;break;
-            }
-        }
-        //取最大
-        else if(key == 10){
-            //闪烁的情况才可以用
-                //选中位置清空
-            switch(procCon & 0xF0){
-                case 0x00: speed = 100;break;
-                case 0x10: min = 40;break;
-                case 0x20: mid = 40;break;
-                case 0x30: max = 40;break;
+            //关显示自动模式无法打开闪烁
+            if((procCon & 0x05) != 0x00){
+                lastCon = procCon;
+                //现在是闪烁打开
+                if(procCon & 0x02)
+                {
+                    min=minc;
+                    mid=midc;
+                    max=maxc;
+                    speed=speedc;
+                }
+                //现在是闪烁关闭
+                else{
+                    minc=min;
+                    midc=mid;
+                    maxc=max;
+                    speedc=speed;
+                }
+                procCon ^= 0x02; //0000 0010
             }
         }
         //风扇模式切换
         else if(key == 12){
-            //选中位置清空 auto,scon
-            LCD12864_ShowString(2,12,"auto");
-            LCD12864_ShowString(2,12,"scon");
-            //切换后更改显示模式
-            
+            lastCon = procCon;
+            if(procCon & 0x04){
+                //0000 0100,为1,风扇手动模式,切换为自动模式
+                procCon &= 0xFB;//1111 1011
+                LCD12864_ShowString(2,12,"auto");
+            }
+            else{
+                //0000 0100,为0,风扇自动模式,切换为手动模式
+                procCon |= 0x04;//0000 0100
+                LCD12864_ShowString(2,12,"scon");
+            } 
         }
         DS18B20_ConvertT();
         TheT = DS18B20_ReadT();
         ShowT(1,8,TheT);
-        LCD12864_ShowFanNum(2,8,speed,3);
-        //显示和不显示
-        if(procCon & 0x0F){
-            //显示
-            //上次是显示就刷新数字
-            //上次是不显示就刷新数字和字符
-            LCD12864_ShowNum(3,6,min);
-            LCD12864_ShowNum(3,14,mid);
-            LCD12864_ShowNum(3,10,max);
-            if(!(lastCon & 0x0F)){
-                LCD12864_ShowString(3,2,"min:");
-                LCD12864_ShowString(3,10,"mid:");
-                LCD12864_ShowString(4,6,"max:");
-            }
-        }
-        else{
-            //不显示
-            //上次是显示就刷新
-            //上次是不显示就什么不做
-            if(lastCon & 0x0F){
-                LCD12864_ShowString(3,2,"      ");
-                LCD12864_ShowString(3,10,"      ");
-                LCD12864_ShowString(4,6,"      ");
-            }
-        }
-        //闪烁效果
 
+        
+        //闪烁效果
+        //闪烁打开
+        if(procCon & 0x02){
+            SetInfo();
+        }
+        //闪烁关闭
+        else{
+            ShowInfo();
+        }
 
 
 
@@ -297,21 +373,28 @@ void main(void){
 void Timer0_Routine() interrupt 1
 {
 	static unsigned int T0Count;
-    static unsigned char slice;
+    static unsigned char speedV;
+    static unsigned int shrink;
 	TL0 = 0x66;		//设置定时初值
 	TH0 = 0xFC;		//设置定时初值
 	T0Count++;
-    line++;
+    speedV++;
+    shrink++;
 	if(T0Count>=20)
 	{
 		T0Count=0;
 		MatrixKey_Loop();
 	}
-    if(line == 100) line = 0;
-    else if(line <= speed){
+    if(shrink>=400)
+	{
+		shrink=0;
+		sFlag = 1 - sFlag; 
+	}
+    if(speedV == 100) speedV = 0;
+    else if(speedV <= speed){
         fan = 1;
     }
-    else if(line > speed){
+    else if(speedV > speed){
         fan = 0;
     }
 }
