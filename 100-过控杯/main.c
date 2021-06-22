@@ -7,7 +7,18 @@
 #include "DS18B20.h"
 #include "Delay.h"
 
+//todo list
+//1 auto的判断的实现        完成
+//2 存储配置参数            完成
+//3 存贮最低温最高温        待定
+//4 修改数值时的逻辑约束    完成
+//6 修改下闪烁逻辑          完成
+
 sbit fan = P2^0;
+sbit WE = P2^1;
+sbit CS88 = P2^2;
+sbit LED = P1^5;
+sbit BUZZ = P2^3;
 unsigned char sFlag = 1;
 unsigned char speed = 50;
 unsigned char key;
@@ -17,7 +28,38 @@ unsigned char procCon=0;
 unsigned char lastCon=0;
 float TheT;
 
-
+void saveValue(unsigned char vcode,unsigned char x){
+    switch(vcode){
+        case 0x01:
+            min = x;
+            AT24C02_WriteByte(1,min);
+            Delayxms(5);
+            break;
+        case 0x02:
+            mid = x;
+            AT24C02_WriteByte(2,mid);
+            Delayxms(5);
+            break;
+        case 0x03:
+            max = x;
+            AT24C02_WriteByte(3,max);
+            Delayxms(5);
+            break;
+    }
+    
+}
+void safeChange(unsigned char vcode,unsigned char x){
+    switch (vcode){
+        case 0x10:
+            if(x<=100 && x>=0) speedc = x;break;
+        case 0x11:
+            if(x >= 18 && x < midc) minc = x;break;
+        case 0x12:
+            if(x>minc && x<maxc) midc = x;break;
+        case 0x13:
+            if(x<=40 && x>midc) maxc = x;break;
+    }
+}
 //第几行第几列开始显示温度
 void ShowT(unsigned char Line,unsigned char Column,float tt){
     //tt可以确定是正的
@@ -29,7 +71,8 @@ void ShowT(unsigned char Line,unsigned char Column,float tt){
     LCD12864_ShowNum(Line,Column + 4 ,((unsigned long)(tt*10000))%10000,4);
 }
 
-void ShowInfo(void)//时间显示功能
+//时间显示功能
+void ShowInfo(void)
 {
     LCD12864_ShowNum(2,8,speed,3);
         //显示和不显示
@@ -58,7 +101,8 @@ void ShowInfo(void)//时间显示功能
         }
 }
 
-void SetInfo(void)//时间设置功能
+//时间设置功能
+void SetInfo(void)
 {
         if(key == 3){
             //闪烁情况下才可以使用
@@ -66,7 +110,18 @@ void SetInfo(void)//时间设置功能
                     //位置加1，注意到上限
                 //关显示的情况
                     //没有变化
-                //如果是开显示情况
+            //补上上一个选择位的内容
+            switch(procCon & 0xF0){
+                case 0x00:
+                    LCD12864_ShowNum(2,8,speedc,3);break;
+                case 0x10:
+                    LCD12864_ShowNum(3,5,minc,3);break;
+                case 0x20: 
+                    LCD12864_ShowNum(3,14,midc,3);break;
+                case 0x30:
+                    LCD12864_ShowNum(4,10,maxc,3);break;
+            }
+            //如果是开显示情况
             if (procCon &0x01){
                 //自动模式情况
                 if(!(procCon & 0x04)){
@@ -84,6 +139,17 @@ void SetInfo(void)//时间设置功能
             }
         }
         else if(key == 4){
+            //补上上一个选择位的内容
+            switch(procCon & 0xF0){
+                case 0x00:
+                    LCD12864_ShowNum(2,8,speedc,3);break;
+                case 0x10:
+                    LCD12864_ShowNum(3,5,minc,3);break;
+                case 0x20: 
+                    LCD12864_ShowNum(3,14,midc,3);break;
+                case 0x30:
+                    LCD12864_ShowNum(4,10,maxc,3);break;
+            }
             if (procCon &0x01){
                 //自动模式情况
                 if(!(procCon & 0x04)){
@@ -105,10 +171,10 @@ void SetInfo(void)//时间设置功能
             //闪烁的情况才可以用
                 //选中位置+1
             switch(procCon & 0xF0){
-                case 0x00: speedc += 1;break;
-                case 0x10: minc += 1;break;
-                case 0x20: midc += 1;break;
-                case 0x30: maxc += 1;break;
+                case 0x00: safeChange(0x10,speedc + 1);break;
+                case 0x10: safeChange(0x11,minc + 1);break;
+                case 0x20: safeChange(0x12,midc + 1);break;
+                case 0x30: safeChange(0x13,maxc + 1);break;
             }
         }
         //-1
@@ -116,10 +182,10 @@ void SetInfo(void)//时间设置功能
             //闪烁的情况才可以用
                 //选中位置-1
             switch(procCon & 0xF0){
-                case 0x00: speedc -= 1;break;
-                case 0x10: minc -= 1;break;
-                case 0x20: midc -= 1;break;
-                case 0x30: maxc -= 1;break;
+                case 0x00: safeChange(0x10,speedc - 1);break;
+                case 0x10: safeChange(0x11,minc - 1);break;
+                case 0x20: safeChange(0x12,midc - 1);break;
+                case 0x30: safeChange(0x13,maxc - 1);break;
             }
         }
         //+5
@@ -127,10 +193,10 @@ void SetInfo(void)//时间设置功能
             //闪烁的情况才可以用
                 //选中位置+5
             switch(procCon & 0xF0){
-                case 0x00: speedc += 5;break;
-                case 0x10: minc += 5;break;
-                case 0x20: midc += 5;break;
-                case 0x30: maxc += 5;break;
+                case 0x00: safeChange(0x10,speedc + 5);break;
+                case 0x10: safeChange(0x11,minc + 5);break;
+                case 0x20: safeChange(0x12,midc + 5);break;
+                case 0x30: safeChange(0x13,maxc + 5);break;
             }
         }
         //-5
@@ -138,10 +204,10 @@ void SetInfo(void)//时间设置功能
             //闪烁的情况才可以用
                 //选中位置-5
             switch(procCon & 0xF0){
-                case 0x00: speedc -= 5;break;
-                case 0x10: minc -= 5;break;
-                case 0x20: midc -= 5;break;
-                case 0x30: maxc -= 5;break;
+                case 0x00: safeChange(0x10,speedc - 5);break;
+                case 0x10: safeChange(0x11,minc - 5);break;
+                case 0x20: safeChange(0x12,midc - 5);break;
+                case 0x30: safeChange(0x13,maxc - 5);break;
             }
         }
         //清空
@@ -149,10 +215,10 @@ void SetInfo(void)//时间设置功能
             //闪烁的情况才可以用
                 //选中位置清空
             switch(procCon & 0xF0){
-                case 0x00: speedc = 0;break;
-                case 0x10: minc = 0;break;
-                case 0x20: midc = 0;break;
-                case 0x30: maxc = 0;break;
+                case 0x00: safeChange(0x10,0);break;
+                case 0x10: safeChange(0x11,18);break;
+                case 0x20: safeChange(0x12,minc + 1);break;
+                case 0x30: safeChange(0x13,midc + 1);break;
             }
         }
         //取最大
@@ -160,28 +226,32 @@ void SetInfo(void)//时间设置功能
             //闪烁的情况才可以用
                 //选中位置清空
             switch(procCon & 0xF0){
-                case 0x00: speedc = 100;break;
-                case 0x10: minc = 40;break;
-                case 0x20: midc = 40;break;
-                case 0x30: maxc = 40;break;
+                case 0x00: safeChange(0x10,100);break;
+                case 0x10: safeChange(0x11,midc - 1);break;
+                case 0x20: safeChange(0x12,maxc - 1);break;
+                case 0x30: safeChange(0x13,40);break;
             }
         }
         //显示和不显示
         if(procCon & 0x01){
             //显示
-            LCD12864_ShowNum(2,8,speedc,3);
-            LCD12864_ShowNum(3,5,minc,3);
-            LCD12864_ShowNum(3,14,midc,3);
-            LCD12864_ShowNum(4,10,maxc,3);
             switch(procCon & 0xF0){
                 case 0x00:
-                    if(sFlag) LCD12864_ShowString(2,8,"   ");break;
+                    if(sFlag) LCD12864_ShowString(2,8,"   ");
+                    else LCD12864_ShowNum(2,8,speedc,3);
+                    break;
                 case 0x10:
-                    if(sFlag) LCD12864_ShowString(3,5,"   ");break;
+                    if(sFlag) LCD12864_ShowString(3,5,"   ");
+                    else LCD12864_ShowNum(3,5,minc,3);
+                    break;
                 case 0x20: 
-                    if(sFlag) LCD12864_ShowString(3,14,"   ");break;
+                    if(sFlag) LCD12864_ShowString(3,14,"   ");
+                    else LCD12864_ShowNum(3,14,midc,3);
+                    break;
                 case 0x30:
-                    if(sFlag) LCD12864_ShowString(4,10,"   ");break;
+                    if(sFlag) LCD12864_ShowString(4,10,"   ");
+                    else LCD12864_ShowNum(4,10,maxc,3);
+                    break;
             }
         }
         else{
@@ -195,19 +265,20 @@ void main(void){
 
     LCD12864_Init();
     Timer0_Init();
+    //关闭数码管和8*8
+    WE = 1;
+    P0 = 0xFF;
+    WE = 0;
+    CS88 = 1;
+    P0 = 0xFF;
+    CS88 = 0;
     DS18B20_ConvertT();
     Delayxms(1000);
-
-    // ((unsigned char *)(&TH))[0] = AT24C02_ReadByte(1);
-    // ((unsigned char *)(&TH))[1] = AT24C02_ReadByte(2);
-    // ((unsigned char *)(&TH))[2] = AT24C02_ReadByte(3);
-    // ((unsigned char *)(&TH))[3] = AT24C02_ReadByte(4);
-    
-    // ((unsigned char *)(&TL))[0] = AT24C02_ReadByte(5);
-    // ((unsigned char *)(&TL))[1] = AT24C02_ReadByte(6);
-    // ((unsigned char *)(&TL))[2] = AT24C02_ReadByte(7);
-    // ((unsigned char *)(&TL))[3] = AT24C02_ReadByte(8);
-        //显示摄氏度的基础信息
+    //从rom中读取配置参数
+    min = AT24C02_ReadByte(1);
+    mid = AT24C02_ReadByte(2);
+    max = AT24C02_ReadByte(3);
+    //显示基础信息
     LCD12864_ShowString(1,2,"Temp:+");
     LCD12864_ShowString(2,2,"Speed:");
     LCD12864_ShowString(2,12,"auto");
@@ -218,6 +289,14 @@ void main(void){
         //显示开关
         if(key == 1){
             lastCon = procCon;
+            //关闪烁对应的操作
+            if(procCon & 0x02)//0000 0001
+            {
+                saveValue(0x01,minc);
+                saveValue(0x02,midc);
+                saveValue(0x03,maxc);
+                speed=speedc;
+            }
             //显示打开状态
             if(procCon & 0x01)//0000 0001
             {
@@ -232,11 +311,8 @@ void main(void){
                 procCon &= 0x0D;
                 procCon |= 0x10;
             }
-            //关闪烁对应的操作
-            min=minc;
-            mid=midc;
-            max=maxc;
-            speed=speedc;
+            
+            
             procCon^=0x01;//反转标志位
         }
         //设置开关
@@ -251,9 +327,9 @@ void main(void){
                 //现在是闪烁打开
                 if(procCon & 0x02)
                 {
-                    min=minc;
-                    mid=midc;
-                    max=maxc;
+                    saveValue(0x01,minc);
+                    saveValue(0x02,midc);
+                    saveValue(0x03,maxc);
                     speed=speedc;
                 }
                 //现在是闪烁关闭
@@ -265,6 +341,11 @@ void main(void){
                 }
                 procCon ^= 0x02; //0000 0010
             }
+        }
+        //报警模式开关
+        else if(key == 11){
+            lastCon = procCon;
+            procCon ^= 0x80;
         }
         //风扇模式切换
         else if(key == 12){
@@ -283,9 +364,36 @@ void main(void){
         DS18B20_ConvertT();
         TheT = DS18B20_ReadT();
         ShowT(1,8,TheT);
+        //超过最高温度，声光提醒
+        if (!(procCon & 0x80))
+        {
+            if(TheT > max){
+                //声光提醒
+                if(sFlag){
+                    LED = 1;
+                    BUZZ = 1;
+                }
+                else{
+                    LED = 0;
+                    BUZZ = 0;
+                }
+            }
+            else{
+                //关闭声光提醒
+                LED = 1;
+                BUZZ = 1;
+            }
+        }
+        //如果是auto模式，根据温度控制风扇的转速
+            //如果是自动模式
+        if(!(procCon & 0x04)){
+            if(TheT<min) speed = 50;
+            else if(TheT < mid) speed = 70;
+            else if(TheT < max) speed = 100;
+            else speed = 100;
+        }
 
-        
-        //闪烁效果
+        //根据是否是修改模式选择不同的显示模式
         //闪烁打开
         if(procCon & 0x02){
             SetInfo();
@@ -294,78 +402,6 @@ void main(void){
         else{
             ShowInfo();
         }
-
-
-
-
-        // if(TheT < TL){
-        //     TL = TheT;
-        //     AT24C02_WriteByte(5,((unsigned char *)(&TL))[0]);
-        //     Delayxms(5);
-        //     AT24C02_WriteByte(6,((unsigned char *)(&TL))[1]);
-        //     Delayxms(5);
-        //     AT24C02_WriteByte(7,((unsigned char *)(&TL))[2]);
-        //     Delayxms(5);
-        //     AT24C02_WriteByte(8,((unsigned char *)(&TL))[3]);
-        //     Delayxms(5);
-        // }
-        // if(TheT > TH){
-        //     TH = TheT;
-        //     //存储
-        //     AT24C02_WriteByte(1,((unsigned char *)(&TH))[0]);
-        //     Delayxms(5);
-        //     AT24C02_WriteByte(2,((unsigned char *)(&TH))[1]);
-        //     Delayxms(5);
-        //     AT24C02_WriteByte(3,((unsigned char *)(&TH))[2]);
-        //     Delayxms(5);
-        //     AT24C02_WriteByte(4,((unsigned char *)(&TH))[3]);
-        //     Delayxms(5);
-        // }
-        // //刷新华氏度
-        // if((key1|nowkey1)){
-        //     if(nowkey1 == 0){
-        //         LCD12864_ShowString(2,1,"           ");
-        //     }
-        //     else{
-        //         LCD12864_ShowString(2,1,"H:");
-        //         TheTC = TheT*1.8+32;
-        //         ShowT(2,3,TheTC);
-        //     }
-        // }
-        // if((key2|nowkey2)){
-        //     if(nowkey2 == 0){
-        //         LCD12864_ShowString(3,1,"            ");
-        //     }
-        //     else{
-        //         LCD12864_ShowString(3,1,"TH:");
-        //         ShowT(3,4,TH);
-        //     }
-        // }
-        // if((key3|nowkey3)){
-        //     if(nowkey3 == 0){
-        //         LCD12864_ShowString(4,1,"            ");
-        //     }
-        //     else{
-        //         LCD12864_ShowString(4,1,"TL:");
-        //         ShowT(4,4,TL);
-        //     }
-        // }
-        // if((key4|nowkey4)){
-        //     if(nowkey4 == 0){
-        //         LCD12864_ShowString(1,14,"  ");
-        //         LCD12864_ShowString(2,13,"   ");
-        //         LCD12864_ShowString(3,14,"  ");
-        //         LCD12864_ShowString(4,13,"   ");
-        //     }
-        //     else{
-        //         LCD12864_ShowString(1,14,"HN");
-        //         LCD12864_ShowChar(2,13,'+');
-        //         LCD12864_ShowNum(2,14,THSet,2);
-        //         LCD12864_ShowString(3,14,"LN");
-        //         LCD12864_ShowChar(4,13,'+');
-        //         LCD12864_ShowNum(4,14,TLSet,2);
-        //     }
-        // }
     }
     
 }
@@ -385,16 +421,16 @@ void Timer0_Routine() interrupt 1
 		T0Count=0;
 		MatrixKey_Loop();
 	}
-    if(shrink>=400)
+    if(shrink>=500)
 	{
 		shrink=0;
 		sFlag = 1 - sFlag; 
 	}
     if(speedV == 100) speedV = 0;
-    else if(speedV <= speed){
+    else if(speedV < speed){
         fan = 1;
     }
-    else if(speedV > speed){
+    else if(speedV >= speed){
         fan = 0;
     }
 }
