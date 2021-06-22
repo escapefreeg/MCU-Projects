@@ -342,13 +342,8 @@ void main(void){
                 procCon ^= 0x02; //0000 0010
             }
         }
-        //报警模式开关
-        else if(key == 11){
-            lastCon = procCon;
-            procCon ^= 0x80;
-        }
         //风扇模式切换
-        else if(key == 12){
+        else if(key == 11){
             lastCon = procCon;
             if(procCon & 0x04){
                 //0000 0100,为1,风扇手动模式,切换为自动模式
@@ -361,11 +356,16 @@ void main(void){
                 LCD12864_ShowString(2,12,"scon");
             } 
         }
+        //报警模式开关
+        else if(key == 12){
+            lastCon = procCon;
+            procCon ^= 0x08;
+        }
         DS18B20_ConvertT();
         TheT = DS18B20_ReadT();
         ShowT(1,8,TheT);
         //超过最高温度，声光提醒
-        if (!(procCon & 0x80))
+        if (!(procCon & 0x08))
         {
             if(TheT > max){
                 //声光提醒
@@ -387,9 +387,9 @@ void main(void){
         //如果是auto模式，根据温度控制风扇的转速
             //如果是自动模式
         if(!(procCon & 0x04)){
-            if(TheT<min) speed = 50;
-            else if(TheT < mid) speed = 70;
-            else if(TheT < max) speed = 100;
+            if(TheT<min) speed = 0;
+            else if(TheT < mid) speed = 50;
+            else if(TheT < max) speed = 70;
             else speed = 100;
         }
 
@@ -421,7 +421,7 @@ void Timer0_Routine() interrupt 1
 		T0Count=0;
 		MatrixKey_Loop();
 	}
-    if(shrink>=500)
+    if(shrink>=380)
 	{
 		shrink=0;
 		sFlag = 1 - sFlag; 
